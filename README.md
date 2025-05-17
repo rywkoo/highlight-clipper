@@ -1,4 +1,4 @@
-# ClipsAI - Video Clipper
+# Highlight Clipper
 
 ---
 
@@ -24,8 +24,8 @@
 
 ```bash
 # Clone repo
-git clone https://github.com/yourusername/clipsai.git
-cd clipsai
+git clone https://github.com/yourusername/highlight-clipper.git
+cd highlight-clipper
 
 # Create and activate virtual environment
 python3.9 -m venv venv
