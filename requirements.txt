@@ -1,0 +1,11 @@
+Flask>=2.0,<3.0
+ffmpeg-python>=0.2.0,<0.3.0
+numpy>=1.19,<1.22
+pydub>=0.23.1,<0.26
+deepface>=0.0.54,<0.1
+opencv-python-headless>=4.5.5,<4.6
+SpeechRecognition>=3.8,<4.0
+librosa>=0.8.0,<0.9
+yt-dlp>=2022.1.1,<2023.0
+torch==1.11.0
+torchaudio==0.11.0

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ClipsAI - Video Clipper</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>ClipsAI - Video Clipper</h1>
+
+        <!-- Input Section -->
+        <div class="form-controls">
+            <input type="text" id="link-input" placeholder="Paste YouTube or Twitch URL here" />
+            <label for="video" class="custom-file-upload">
+                Upload Video
+                <input type="file" id="video" name="video" accept="video/*" onchange="onFileSelected(this)" />
+            </label>
+            <button type="button" id="start-button" disabled onclick="startClipping()">Start Clipping</button>
+        </div>
+
+        <!-- Preview & Info -->
+        <p id="filename-display" class="filename-display"></p>
+        <video id="video-preview" class="video-preview" controls></video>
+
+        <!-- Inside body -->
+        <div class="container">
+            ...
+            <div id="spinner" class="spinner"></div>
+            <div id="clips" class="clips"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

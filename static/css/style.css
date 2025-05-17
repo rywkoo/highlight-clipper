@@ -1,0 +1,149 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+}
+
+.container {
+    width: 60%;
+    margin: 20px auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+}
+
+.filename-display {
+    margin: 10px 0;
+    font-weight: bold;
+    text-align: center;
+}
+
+.video-preview {
+    width: 320px;
+    height: auto;
+    margin: 10px auto;
+    display: block;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+button {
+    padding: 12px 24px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-size: 16px;
+}
+
+button:disabled {
+    background-color: #bbb;
+    cursor: not-allowed;
+}
+
+button:hover:enabled {
+    background-color: #218838;
+}
+
+.spinner {
+    width: 30px;
+    height: 30px;
+    border: 4px solid #ccc;
+    border-top: 4px solid #333;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 10px auto;
+    display: none; /* Hidden by default */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.custom-file-upload {
+    display: inline-block;
+    padding: 12px 24px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border-radius: 5px;
+    border: 2px solid transparent;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    font-size: 16px;
+}
+
+.custom-file-upload:hover {
+    background-color: #0056b3;
+}
+
+.custom-file-upload input[type="file"] {
+    display: none;
+}
+
+.clips {
+    margin-top: 20px;
+}
+
+.clip {
+    margin: 10px;
+}
+
+video {
+    margin: 5px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+}
+
+video:hover {
+    border-color: #007bff;
+}
+
+#video-url {
+    width: 100%;
+    max-width: 400px;
+    padding: 10px 12px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+}
+
+/* Container for input + buttons */
+.form-controls {
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: center;     /* Align vertically */
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap; /* Wrap on smaller screens */
+}
+
+/* Style the link input */
+#link-input {
+    width: 60%;
+    max-width: 400px;
+    padding: 10px 15px;
+    font-size: 16px;
+    border-radius: 5px;
+    border: 1.5px solid #ccc;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease;
+}
+
+#link-input:focus {
+    outline: none;
+    border-color: #007bff;
+}
