@@ -24,13 +24,16 @@
 
 - Python 3.9  
 - ffmpeg installed and in your PATH  https://www.gyan.dev/ffmpeg/builds/
-- Cuda 11.8 and CuDNN 8.6 in your PATH
-  Cuda 11.8: https://developer.nvidia.com/cuda-11-8-0-download-archive
-  CuDNN 8.6: https://developer.nvidia.com/compute/cudnn/secure/8.6.0/local_installers/11.8/cudnn-windows-x86_64-8.6.0.163_cuda11-archive.zip
+- Cuda 11.8: https://developer.nvidia.com/cuda-11-8-0-download-archive
+- CuDNN 8.6: https://developer.nvidia.com/compute/cudnn/secure/8.6.0/local_installers/11.8/cudnn-windows-x86_64-8.6.0.163_cuda11-archive.zip
+- Make sure to set the all of them in System Virables in Environment Variable
 
 ---
 
 ## ⚙️ Setup & Run
+
+- Check your ```nvidia-smi``` in Command Prompt and look for your Cuda Version
+- Scroll down and change Cuda Version based on your current version of Cuda by add a "#" in front of the version you do not wish to install and leave blank in front of the version that match your version in ```requirements.txt``` inside the Clone Repo 
 
 ```bash
 # Clone repo
@@ -43,6 +46,7 @@ venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
+```
 
 # Run the app in ClipsAI folder
 open start_clipsai.bat
