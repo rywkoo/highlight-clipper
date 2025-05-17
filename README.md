@@ -7,6 +7,8 @@
 I'm just a starter or a student who just want to make this thing work, everything is made using AI, if something wrong I might not be able to help you.
 If you are a senior, please help suggesting somewhere I can improve, thank you.
 
+---
+
 ## 🚀 Features
 
 - Upload local video files or provide YouTube/Twitch livestream links  
