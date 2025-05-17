@@ -8,7 +8,17 @@ import cv2
 import speech_recognition as sr
 from datetime import datetime
 import yt_dlp
-from waitress import serve
+from werkzeug.utils import secure_filename
+
+# Setup Folders - Relative to current working directory
+UPLOAD_FOLDER = os.path.abspath('uploads')  # Full path to uploads folder
+CLIP_FOLDER = os.path.abspath('clips')      # Full path to clips folder
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(CLIP_FOLDER, exist_ok=True)
+
+print(f"[INFO] Upload folder initialized at: {UPLOAD_FOLDER}")
+print(f"[INFO] Clips folder initialized at: {CLIP_FOLDER}")
 
 # GPU Configuration
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'  # Use first GPU
@@ -30,15 +40,9 @@ def check_gpu():
 gpu_available = check_gpu()
 
 app = Flask(__name__)
-
-# Directory Configuration
-UPLOAD_FOLDER = 'uploads'
-CLIP_FOLDER = 'clips'
-
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(CLIP_FOLDER, exist_ok=True)
-
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024  # 1 GB max upload size
+
 
 # Helper Functions
 
@@ -107,14 +111,6 @@ def extract_clip(input_path, start_time, duration, output_path):
     except Exception as e:
         print(f"General error extracting clip: {e}")
 
-def extract_around_timestamp(input_path, timestamp, output_path, skip_time=20):
-    pre_duration = 30  # seconds before
-    post_duration = 30  # seconds after
-    start_time = max(0, timestamp - pre_duration)
-    duration = pre_duration + post_duration
-    extract_clip(input_path, start_time, duration, output_path)
-    return timestamp + skip_time
-
 def clip_video_process(video_path, video_name):
     video_subfolder = os.path.join(UPLOAD_FOLDER, datetime.now().strftime('%Y-%m-%d'), video_name)
     os.makedirs(video_subfolder, exist_ok=True)
@@ -130,6 +126,7 @@ def clip_video_process(video_path, video_name):
             .overwrite_output()
             .run(quiet=True)
         )
+        print(f"Audio extracted to: {audio_path}")
     except ffmpeg.Error as e:
         print(f"Error extracting audio: {e.stderr.decode()}")
         return [], []
@@ -149,25 +146,49 @@ def clip_video_process(video_path, video_name):
     timestamps.update(laughter_timestamps)
     timestamps.update(emotion_timestamps)
 
+    timestamps = sorted(timestamps)
+
     clip_subfolder = os.path.join(CLIP_FOLDER, video_name)
     os.makedirs(clip_subfolder, exist_ok=True)
     clip_paths = []
-    current_time = 0
 
-    for idx, timestamp in enumerate(sorted(timestamps)):
-        if timestamp >= current_time:
+    pre_duration = 30  # seconds before
+    post_duration = 30  # seconds after
+    min_gap = 20        # seconds to skip after each clip
+    last_clip_end_time = 0
+
+    for idx, timestamp in enumerate(timestamps):
+        start_time = max(0, timestamp - pre_duration)
+        clip_end_time = start_time + pre_duration + post_duration
+
+        if start_time >= last_clip_end_time:
             output_path = os.path.join(clip_subfolder, f"clip_{idx}.mp4")
-            current_time = extract_around_timestamp(video_path, timestamp, output_path)
-            rel_path = os.path.relpath(output_path, CLIP_FOLDER).replace("\\", "/")
-            clip_paths.append(url_for('serve_clip', filename=rel_path))
+            try:
+                print(f"Extracting clip around {timestamp:.2f}s")
+                (
+                    ffmpeg
+                    .input(video_path, ss=start_time, t=pre_duration + post_duration)
+                    .output(output_path, vcodec='h264_nvenc', acodec='copy')
+                    .overwrite_output()
+                    .run(quiet=True)
+                )
+                rel_path = os.path.relpath(output_path, CLIP_FOLDER).replace("\\", "/")
+                clip_paths.append(url_for('serve_clip', filename=rel_path))
+
+                # Update last clip end time with gap
+                last_clip_end_time = clip_end_time + min_gap
+            except Exception as e:
+                print(f"Failed to extract clip at {timestamp}: {str(e)}")
 
     return clip_paths, topic_segments
+
 
 # Routes
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -177,15 +198,17 @@ def upload_file():
     if video.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
+    filename = secure_filename(video.filename)
+    video_name = os.path.splitext(filename)[0]
     current_date = datetime.now().strftime('%Y-%m-%d')
+
     video_folder = os.path.join(UPLOAD_FOLDER, current_date)
-    os.makedirs(video_folder, exist_ok=True)
-
-    video_name = os.path.splitext(video.filename)[0]
     video_subfolder = os.path.join(video_folder, video_name)
-    os.makedirs(video_subfolder, exist_ok=True)
 
-    video_path = os.path.join(video_subfolder, video.filename)
+    os.makedirs(video_subfolder, exist_ok=True)
+    video_path = os.path.join(video_subfolder, filename)
+
+    print(f"Saving uploaded video to: {video_path}")
     video.save(video_path)
 
     clip_paths, topic_segments = clip_video_process(video_path, video_name)
@@ -194,6 +217,7 @@ def upload_file():
         "clips": clip_paths,
         "topics": topic_segments
     })
+
 
 @app.route('/download_link', methods=['POST'])
 def download_link():
@@ -209,6 +233,7 @@ def download_link():
         'quiet': True,
         'no_warnings': True,
     }
+
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
@@ -224,9 +249,13 @@ def download_link():
         "topics": topic_segments
     })
 
+
 @app.route('/clips/<path:filename>')
 def serve_clip(filename):
     return send_from_directory(CLIP_FOLDER, filename)
 
+
 if __name__ == "__main__":
-    serve(app, host='0.0.0.0', port=5000)
+    from waitress import serve
+    print("Starting server...")
+    serve(app, host='0.0.0.0', port=5000, threads=8)
