@@ -45,7 +45,9 @@ cd highlight-clipper
 # Create and activate virtual environment
 py 3.9 -m venv venv
 venv\Scripts\activate
+```
 
+```
 # Install dependencies
 pip install -r requirements.txt
 ```
