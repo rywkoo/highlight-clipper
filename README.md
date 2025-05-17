@@ -4,8 +4,9 @@
 
 ## 👀 Introduction
 
-I'm just a starter or a student who just want to make this thing work, everything is made using AI, if something wrong I might not be able to help you.
-If you are a senior, please help suggesting somewhere I can improve, thank you.
+- I'm just a starter or a student who just want to make this thing work, everything is made using AI, if something wrong I might not be able to help you.
+- This is just an early stage development, so everything won't be working like it would be like clipping via emotion and stuff will come with later update.
+- If you are a senior, please help suggesting somewhere I can improve, thank you.
 
 ---
 
