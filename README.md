@@ -54,6 +54,4 @@ venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 ```
-
-# Run the app in ClipsAI folder
-open start_clipsai.bat
+- Open the ```start-h.bat``` inside the Directory and Enjoy
