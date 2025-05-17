@@ -1,5 +1,5 @@
 @echo off
-:: Change to current working directory
+
 cd /d "%CD%"
 
 call .venv\Scripts\activate.bat
