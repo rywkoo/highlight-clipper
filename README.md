@@ -32,13 +32,16 @@
 
 ## ⚙️ Setup & Run
 
-- Check your ```nvidia-smi``` in Command Prompt and look for your Cuda Version
+- Stay in the Path you wish to install in Window Explorer
+- Click on the path above (Where you copy path) and write ```cmd```
 
 ```bash
-# Clone repo
+# Copy these command to clone the Repo
 git clone https://github.com/rywkoo/highlight-clipper.git
 cd highlight-clipper
 ```
+
+- Check your ```nvidia-smi``` in Command Prompt and look for your Cuda Version
 - Open ```requirements.txt``` inside the Clone Repo and scroll down and change Cuda Version based on your current version of Cuda by add a "#" in front of the version you do not wish to install and leave blank in front of the version that match your version
 
 ```
