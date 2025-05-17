@@ -23,8 +23,10 @@
 ## 💻 Requirements
 
 - Python 3.9  
-- ffmpeg installed and in your PATH  
-- Optional: NVIDIA GPU for faster video processing and emotion detection  
+- ffmpeg installed and in your PATH  https://www.gyan.dev/ffmpeg/builds/
+- Cuda 11.8 and CuDNN 8.6 in your PATH
+  Cuda 11.8: https://developer.nvidia.com/cuda-11-8-0-download-archive
+  CuDNN 8.6: https://developer.nvidia.com/compute/cudnn/secure/8.6.0/local_installers/11.8/cudnn-windows-x86_64-8.6.0.163_cuda11-archive.zip
 
 ---
 
