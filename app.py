@@ -32,8 +32,11 @@ gpu_available = check_gpu()
 app = Flask(__name__)
 
 # Directory Configuration
-UPLOAD_FOLDER = 'uploads'
-CLIP_FOLDER = 'clips'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Define upload and clip folders relative to BASE_DIR (your Git repo root)
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+CLIP_FOLDER = os.path.join(BASE_DIR, 'clips')
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(CLIP_FOLDER, exist_ok=True)
