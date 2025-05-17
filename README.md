@@ -33,7 +33,7 @@
 ## ⚙️ Setup & Run
 
 - Check your ```nvidia-smi``` in Command Prompt and look for your Cuda Version
-- Scroll down and change Cuda Version based on your current version of Cuda by add a "#" in front of the version you do not wish to install and leave blank in front of the version that match your version in ```requirements.txt``` inside the Clone Repo 
+- Open ```requirements.txt``` inside the Clone Repo and scroll down and change Cuda Version based on your current version of Cuda by add a "#" in front of the version you do not wish to install and leave blank in front of the version that match your version 
 
 ```bash
 # Clone repo
