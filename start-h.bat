@@ -1,13 +1,18 @@
 @echo off
-cd /d D:\Fun\ClipsAI
+:: Change to current working directory
+cd /d "%CD%"
+
+:: Activate virtual environment
 call .venv\Scripts\activate.bat
 
-REM Run the Python app in the same console (blocks here)
+:: Run Flask app in background
+echo Starting Flask server...
 start "" /b python app.py
 
-REM Wait 10 seconds to allow server to start
+:: Wait 10 seconds to allow server to start
 timeout /t 10 /nobreak >nul
 
+:: Open browser
 start http://127.0.0.1:5000
 
 pause
