@@ -1,13 +1,14 @@
 import os
 import ffmpeg
+import numpy as np
 from flask import Flask, request, jsonify, render_template, url_for, send_from_directory
 from pydub import AudioSegment, silence
 from deepface import DeepFace
 import cv2
-import numpy as np
 import speech_recognition as sr
-from datetime import datetime
 import yt_dlp
+import librosa
+from datetime import datetime
 from waitress import serve
 
 # --- Auto-detect base directory ---
@@ -33,11 +34,55 @@ print(f"[INFO] Clips folder  : {CLIP_FOLDER}")
 def detect_loud_segments(audio_path, threshold=-20):
     try:
         audio = AudioSegment.from_file(audio_path)
-        loud_segments = silence.detect_nonsilent(audio, min_silence_len=1000, silence_thresh=threshold)
-        return [[start / 1000, end / 1000] for start, end in loud_segments]
+        segments = silence.detect_nonsilent(audio, min_silence_len=1000, silence_thresh=threshold)
+        return [[start / 1000, end / 1000] for start, end in segments]
     except Exception as e:
         print(f"[ERROR] Loud segment detection failed: {e}")
         return []
+
+def detect_laughter(audio_path):
+    try:
+        y, sr_ = librosa.load(audio_path, sr=None)
+        rms = librosa.feature.rms(y=y)[0]
+        threshold = np.percentile(rms, 90)
+        laughter_frames = np.where(rms > threshold)[0]
+        times = librosa.frames_to_time(laughter_frames, sr=sr_)
+        return times.tolist()
+    except Exception as e:
+        print(f"[ERROR] Laughter detection failed: {e}")
+        return []
+
+def detect_emotions(video_path):
+    cap = cv2.VideoCapture(video_path)
+    emotion_timestamps = []
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        try:
+            result = DeepFace.analyze(frame, actions=['emotion'], enforce_detection=False)
+            dominant = result.get('dominant_emotion', '')
+            timestamp = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+            if dominant in ['happy', 'sad', 'angry']:
+                emotion_timestamps.append(timestamp)
+        except Exception:
+            continue
+    cap.release()
+    return emotion_timestamps
+
+def detect_topic(audio_path, keywords):
+    recognizer = sr.Recognizer()
+    results = []
+    try:
+        with sr.AudioFile(audio_path) as source:
+            audio = recognizer.record(source)
+            text = recognizer.recognize_google(audio).lower()
+            for keyword in keywords:
+                if keyword.lower() in text:
+                    results.append((keyword, text))
+    except Exception as e:
+        print(f"[ERROR] Speech recognition error: {e}")
+    return results
 
 def extract_clip(input_path, start_time, duration, output_path):
     try:
@@ -78,18 +123,27 @@ def clip_video_process(video_path, video_name):
         return []
 
     loud_segments = detect_loud_segments(audio_path)
-    timestamps = [seg[0] for seg in loud_segments]
+    laughter_times = detect_laughter(audio_path)
+    emotion_times = detect_emotions(video_path)
+    topic_hits = detect_topic(audio_path, ["project", "meeting", "success"])
+
+    timestamps = set(int(seg[0]) for seg in loud_segments)
+    timestamps.update(int(t) for t in laughter_times)
+    timestamps.update(int(t) for t in emotion_times)
 
     clip_subfolder = os.path.join(CLIP_FOLDER, video_name)
     os.makedirs(clip_subfolder, exist_ok=True)
     clip_paths = []
 
+    current_time = 0
     for idx, timestamp in enumerate(sorted(timestamps)):
-        output_path = os.path.join(clip_subfolder, f"clip_{idx}.mp4")
-        success = extract_clip(video_path, max(0, timestamp - 5), 15, output_path)
-        if success:
-            rel_path = os.path.relpath(output_path, CLIP_FOLDER).replace("\\", "/")
-            clip_paths.append(url_for('serve_clip', filename=rel_path))
+        if timestamp >= current_time:
+            output_path = os.path.join(clip_subfolder, f"clip_{idx}.mp4")
+            success = extract_clip(video_path, timestamp, 30, output_path)
+            if success:
+                rel_path = os.path.relpath(output_path, CLIP_FOLDER).replace("\\", "/")
+                clip_paths.append(url_for('serve_clip', filename=rel_path))
+            current_time = timestamp + 20
 
     return clip_paths
 
