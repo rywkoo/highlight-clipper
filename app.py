@@ -11,8 +11,8 @@ import yt_dlp
 from werkzeug.utils import secure_filename
 
 # Setup Folders - Relative to current working directory
-UPLOAD_FOLDER = os.path.abspath('uploads')  # Full path to uploads folder
-CLIP_FOLDER = os.path.abspath('clips')      # Full path to clips folder
+UPLOAD_FOLDER = os.path.abspath('uploads')  
+CLIP_FOLDER = os.path.abspath('clips')    
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(CLIP_FOLDER, exist_ok=True)
@@ -41,7 +41,7 @@ gpu_available = check_gpu()
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024  # 1 GB max upload size
+app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024  
 
 
 # Helper Functions
@@ -49,7 +49,7 @@ app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 1024  # 1 GB max upload size
 def detect_loud_segments(audio_path, threshold=-20):
     audio = AudioSegment.from_file(audio_path)
     loud_segments = silence.detect_nonsilent(audio, min_silence_len=1000, silence_thresh=threshold)
-    return loud_segments  # list of [start_ms, end_ms]
+    return loud_segments 
 
 def detect_laughter(audio_path):
     import librosa
@@ -152,9 +152,9 @@ def clip_video_process(video_path, video_name):
     os.makedirs(clip_subfolder, exist_ok=True)
     clip_paths = []
 
-    pre_duration = 30  # seconds before
-    post_duration = 30  # seconds after
-    min_gap = 20        # seconds to skip after each clip
+    pre_duration = 30  
+    post_duration = 30  
+    min_gap = 20       
     last_clip_end_time = 0
 
     for idx, timestamp in enumerate(timestamps):
