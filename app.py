@@ -6,111 +6,123 @@ from pydub import AudioSegment, silence
 from deepface import DeepFace
 import cv2
 import speech_recognition as sr
-import yt_dlp
-import librosa
 from datetime import datetime
+import yt_dlp
 from waitress import serve
 
-# --- Auto-detect base directory ---
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
-CLIP_FOLDER = os.path.join(BASE_DIR, 'clips')
+# GPU Configuration
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'  # Use first GPU
 
-# --- Create folders if not exists ---
+# PyTorch GPU check
+def check_gpu():
+    try:
+        import torch
+        if torch.cuda.is_available():
+            print(f"GPU is available: {torch.cuda.get_device_name(0)}")
+            return True
+        else:
+            print("GPU not available. Running on CPU.")
+            return False
+    except Exception as e:
+        print("Error initializing GPU with PyTorch:", e)
+        return False
+
+gpu_available = check_gpu()
+
+app = Flask(__name__)
+
+# Directory Configuration
+UPLOAD_FOLDER = 'uploads'
+CLIP_FOLDER = 'clips'
+
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(CLIP_FOLDER, exist_ok=True)
 
-# --- Initialize Flask App ---
-app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# --- Print debug info at startup ---
-print(f"[INFO] Base directory: {BASE_DIR}")
-print(f"[INFO] Uploads folder: {UPLOAD_FOLDER}")
-print(f"[INFO] Clips folder  : {CLIP_FOLDER}")
-
-# --- Helper Functions ---
+# Helper Functions
 
 def detect_loud_segments(audio_path, threshold=-20):
-    try:
-        audio = AudioSegment.from_file(audio_path)
-        segments = silence.detect_nonsilent(audio, min_silence_len=1000, silence_thresh=threshold)
-        return [[start / 1000, end / 1000] for start, end in segments]
-    except Exception as e:
-        print(f"[ERROR] Loud segment detection failed: {e}")
-        return []
+    audio = AudioSegment.from_file(audio_path)
+    loud_segments = silence.detect_nonsilent(audio, min_silence_len=1000, silence_thresh=threshold)
+    return loud_segments  # list of [start_ms, end_ms]
 
 def detect_laughter(audio_path):
-    try:
-        y, sr_ = librosa.load(audio_path, sr=None)
-        rms = librosa.feature.rms(y=y)[0]
-        threshold = np.percentile(rms, 90)
-        laughter_frames = np.where(rms > threshold)[0]
-        times = librosa.frames_to_time(laughter_frames, sr=sr_)
-        return times.tolist()
-    except Exception as e:
-        print(f"[ERROR] Laughter detection failed: {e}")
-        return []
+    import librosa
+    y, sr_ = librosa.load(audio_path, sr=None)
+    rms = librosa.feature.rms(y=y)[0]
+    threshold = np.percentile(rms, 90)
+    laughter_frames = np.where(rms > threshold)[0]
+    times = librosa.frames_to_time(laughter_frames, sr=sr_)
+    return times
 
 def detect_emotions(video_path):
     cap = cv2.VideoCapture(video_path)
-    emotion_timestamps = []
+    emotion_frames = []
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
             break
         try:
-            result = DeepFace.analyze(frame, actions=['emotion'], enforce_detection=False)
-            dominant = result.get('dominant_emotion', '')
-            timestamp = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
-            if dominant in ['happy', 'sad', 'angry']:
-                emotion_timestamps.append(timestamp)
+            result = DeepFace.analyze(frame, actions=['emotion'], enforce_detection=False,
+                                     detector_backend='opencv',
+                                     device='cuda' if gpu_available else 'cpu')
+            dominant_emotion = result.get('dominant_emotion', '')
+            if dominant_emotion in ['happy', 'sad', 'angry']:
+                timestamp = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+                emotion_frames.append(timestamp)
         except Exception:
-            continue
+            pass
     cap.release()
-    return emotion_timestamps
+    return emotion_frames
 
 def detect_topic(audio_path, keywords):
     recognizer = sr.Recognizer()
-    results = []
-    try:
-        with sr.AudioFile(audio_path) as source:
-            audio = recognizer.record(source)
+    topic_segments = []
+    with sr.AudioFile(audio_path) as source:
+        audio = recognizer.record(source)
+        try:
             text = recognizer.recognize_google(audio).lower()
             for keyword in keywords:
                 if keyword.lower() in text:
-                    results.append((keyword, text))
-    except Exception as e:
-        print(f"[ERROR] Speech recognition error: {e}")
-    return results
+                    topic_segments.append((keyword, text))
+        except sr.UnknownValueError:
+            print("Speech not recognized")
+        except Exception as e:
+            print("Speech recognition error:", e)
+    return topic_segments
 
 def extract_clip(input_path, start_time, duration, output_path):
     try:
         (
             ffmpeg
             .input(input_path, ss=start_time, t=duration)
-            .output(output_path, vcodec='libx264', acodec='aac')
+            .output(output_path, vcodec='h264_nvenc', acodec='copy')
             .overwrite_output()
             .run(quiet=True)
         )
-        print(f"[SUCCESS] Clip saved: {output_path}")
-        return True
+        print(f"Clip saved: {output_path}")
     except ffmpeg.Error as e:
-        print(f"[ERROR] FFmpeg error: {e.stderr.decode()}")
+        print(f"Error extracting clip: {e.stderr.decode()}")
     except Exception as e:
-        print(f"[ERROR] Unexpected error: {e}")
-    return False
+        print(f"General error extracting clip: {e}")
+
+def extract_around_timestamp(input_path, timestamp, output_path, skip_time=20):
+    pre_duration = 30  # seconds before
+    post_duration = 30  # seconds after
+    start_time = max(0, timestamp - pre_duration)
+    duration = pre_duration + post_duration
+    extract_clip(input_path, start_time, duration, output_path)
+    return timestamp + skip_time
 
 def clip_video_process(video_path, video_name):
-    date_folder = datetime.now().strftime('%Y-%m-%d')
-    video_subfolder = os.path.join(UPLOAD_FOLDER, date_folder, video_name)
+    video_subfolder = os.path.join(UPLOAD_FOLDER, datetime.now().strftime('%Y-%m-%d'), video_name)
     os.makedirs(video_subfolder, exist_ok=True)
 
     audio_path = os.path.join(video_subfolder, f"{video_name}.wav")
 
     # Extract audio
     try:
-        print(f"[INFO] Extracting audio from {video_path} → {audio_path}")
         (
             ffmpeg
             .input(video_path)
@@ -118,36 +130,40 @@ def clip_video_process(video_path, video_name):
             .overwrite_output()
             .run(quiet=True)
         )
+    except ffmpeg.Error as e:
+        print(f"Error extracting audio: {e.stderr.decode()}")
+        return [], []
     except Exception as e:
-        print(f"[ERROR] Failed to extract audio: {e}")
-        return []
+        print(f"General error extracting audio: {e}")
+        return [], []
 
     loud_segments = detect_loud_segments(audio_path)
-    laughter_times = detect_laughter(audio_path)
-    emotion_times = detect_emotions(video_path)
-    topic_hits = detect_topic(audio_path, ["project", "meeting", "success"])
+    laughter_segments = detect_laughter(audio_path)
+    emotion_timestamps = detect_emotions(video_path)
+    topic_segments = detect_topic(audio_path, ['project', 'meeting', 'success'])
 
-    timestamps = set(int(seg[0]) for seg in loud_segments)
-    timestamps.update(int(t) for t in laughter_times)
-    timestamps.update(int(t) for t in emotion_times)
+    loud_timestamps = [seg[0] / 1000.0 for seg in loud_segments]
+    laughter_timestamps = list(laughter_segments)
+
+    timestamps = set(loud_timestamps)
+    timestamps.update(laughter_timestamps)
+    timestamps.update(emotion_timestamps)
 
     clip_subfolder = os.path.join(CLIP_FOLDER, video_name)
     os.makedirs(clip_subfolder, exist_ok=True)
     clip_paths = []
-
     current_time = 0
+
     for idx, timestamp in enumerate(sorted(timestamps)):
         if timestamp >= current_time:
             output_path = os.path.join(clip_subfolder, f"clip_{idx}.mp4")
-            success = extract_clip(video_path, timestamp, 30, output_path)
-            if success:
-                rel_path = os.path.relpath(output_path, CLIP_FOLDER).replace("\\", "/")
-                clip_paths.append(url_for('serve_clip', filename=rel_path))
-            current_time = timestamp + 20
+            current_time = extract_around_timestamp(video_path, timestamp, output_path)
+            rel_path = os.path.relpath(output_path, CLIP_FOLDER).replace("\\", "/")
+            clip_paths.append(url_for('serve_clip', filename=rel_path))
 
-    return clip_paths
+    return clip_paths, topic_segments
 
-# --- Routes ---
+# Routes
 
 @app.route('/')
 def index():
@@ -161,19 +177,22 @@ def upload_file():
     if video.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
+    current_date = datetime.now().strftime('%Y-%m-%d')
+    video_folder = os.path.join(UPLOAD_FOLDER, current_date)
+    os.makedirs(video_folder, exist_ok=True)
+
     video_name = os.path.splitext(video.filename)[0]
-    date_folder = datetime.now().strftime('%Y-%m-%d')
-    video_subfolder = os.path.join(UPLOAD_FOLDER, date_folder, video_name)
+    video_subfolder = os.path.join(video_folder, video_name)
     os.makedirs(video_subfolder, exist_ok=True)
 
     video_path = os.path.join(video_subfolder, video.filename)
     video.save(video_path)
-    print(f"[INFO] Video saved to: {video_path}")
 
-    clip_paths = clip_video_process(video_path, video_name)
+    clip_paths, topic_segments = clip_video_process(video_path, video_name)
 
     return jsonify({
-        "clips": clip_paths
+        "clips": clip_paths,
+        "topics": topic_segments
     })
 
 @app.route('/download_link', methods=['POST'])
@@ -198,18 +217,16 @@ def download_link():
     except Exception as e:
         return jsonify({"error": f"Download failed: {str(e)}"}), 500
 
-    clip_paths = clip_video_process(filename, video_name)
+    clip_paths, topic_segments = clip_video_process(filename, video_name)
 
     return jsonify({
-        "clips": clip_paths
+        "clips": clip_paths,
+        "topics": topic_segments
     })
 
 @app.route('/clips/<path:filename>')
 def serve_clip(filename):
     return send_from_directory(CLIP_FOLDER, filename)
 
-# --- Run App ---
-
 if __name__ == "__main__":
-    print("[INFO] Starting Flask app...")
     serve(app, host='0.0.0.0', port=5000)
