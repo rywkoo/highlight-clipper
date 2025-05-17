@@ -28,8 +28,8 @@ git clone https://github.com/yourusername/highlight-clipper.git
 cd highlight-clipper
 
 # Create and activate virtual environment
-python3.9 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+py 3.9 -m venv venv
+venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
