@@ -33,13 +33,15 @@
 ## ⚙️ Setup & Run
 
 - Check your ```nvidia-smi``` in Command Prompt and look for your Cuda Version
-- Open ```requirements.txt``` inside the Clone Repo and scroll down and change Cuda Version based on your current version of Cuda by add a "#" in front of the version you do not wish to install and leave blank in front of the version that match your version 
 
 ```bash
 # Clone repo
 git clone https://github.com/rywkoo/highlight-clipper.git
 cd highlight-clipper
+```
+- Open ```requirements.txt``` inside the Clone Repo and scroll down and change Cuda Version based on your current version of Cuda by add a "#" in front of the version you do not wish to install and leave blank in front of the version that match your version
 
+```
 # Create and activate virtual environment
 py 3.9 -m venv venv
 venv\Scripts\activate
