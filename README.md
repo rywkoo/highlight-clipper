@@ -32,7 +32,7 @@
 
 ```bash
 # Clone repo
-git clone https://github.com/yourusername/highlight-clipper.git
+git clone https://github.com/rywkoo/highlight-clipper.git
 cd highlight-clipper
 
 # Create and activate virtual environment
