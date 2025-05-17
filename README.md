@@ -1,6 +1,5 @@
 # ClipsAI - Video Clipper
 
-![ClipsAI Banner](https://your-image-url.com/banner.png)  
 *Your tagline or one-liner about the project.*
 
 ---
