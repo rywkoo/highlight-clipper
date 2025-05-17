@@ -1,7 +1,5 @@
 # ClipsAI - Video Clipper
 
-*Your tagline or one-liner about the project.*
-
 ---
 
 ## 🚀 Features
