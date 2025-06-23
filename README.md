@@ -46,12 +46,12 @@ cd highlight-clipper
 
 ```
 # Create and activate virtual environment
-py 3.9 -m venv venv
+py -3.9 -m venv venv
 venv\Scripts\activate
 ```
 
 ```
 # Install dependencies
-pip install -r requirements.txt
+pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu128
 ```
 - Open the ```start-h.bat``` inside the Directory and Enjoy
