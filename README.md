@@ -36,7 +36,6 @@
 - Click on the path above (Where you copy path) and write ```cmd```
 
 ```bash
-# Copy these command to clone the Repo
 git clone https://github.com/rywkoo/highlight-clipper.git
 cd highlight-clipper
 ```
@@ -45,13 +44,11 @@ cd highlight-clipper
 - Open ```requirements.txt``` inside the Clone Repo and scroll down and change Cuda Version based on your current version of Cuda by add a "#" in front of the version you do not wish to install and leave blank in front of the version that match your version
 
 ```
-# Create and activate virtual environment
 py -3.9 -m venv venv
 venv\Scripts\activate
 ```
 
 ```
-# Install dependencies
 pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu128
 ```
 - Open the ```start-h.bat``` inside the Directory and Enjoy
