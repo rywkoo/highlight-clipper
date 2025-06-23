@@ -45,6 +45,14 @@ venv\Scripts\activate
 ```
 
 ```
-pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu128
+pip install -r requirements.txt
 ```
+
+- Please run this separated installation
+```
+pip install torch==2.7.0+cu128 --index-url https://download.pytorch.org/whl/cu128
+pip install torchvision==0.18.0+cu128 --index-url https://download.pytorch.org/whl/cu128
+pip install torchaudio==2.7.0+cu128 --index-url https://download.pytorch.org/whl/cu128
+```
+
 - Open the ```start-h.bat``` inside the Directory and Enjoy
