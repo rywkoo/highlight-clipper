@@ -34,11 +34,3 @@ pandas==2.0.3
 requests==2.32.3
 gdown==5.2.0
 tqdm==4.67.1
-
-# Tell pip where to find CUDA wheels
--f https://download.pytorch.org/whl/cu128
-
-# PyTorch with CUDA Support (choose one of the following based on your CUDA version)
-torch==2.7.0+cu128 
-torchvision==0.18.0+cu128
-torchaudio==2.7.0+cu128
