@@ -24,8 +24,7 @@
 
 - Python 3.9  
 - ffmpeg installed and in your PATH  https://www.gyan.dev/ffmpeg/builds/
-- Cuda 11.8: https://developer.nvidia.com/cuda-11-8-0-download-archive
-- CuDNN 8.6: https://developer.nvidia.com/compute/cudnn/secure/8.6.0/local_installers/11.8/cudnn-windows-x86_64-8.6.0.163_cuda11-archive.zip
+- High end CUDA 12.8
 - Make sure to set the all of them in System Virables in Environment Variable
 
 ---
@@ -35,13 +34,10 @@
 - Stay in the Path you wish to install in Window Explorer
 - Click on the path above (Where you copy path) and write ```cmd```
 
-```bash
+```
 git clone https://github.com/rywkoo/highlight-clipper.git
 cd highlight-clipper
 ```
-
-- Check your ```nvidia-smi``` in Command Prompt and look for your Cuda Version
-- Open ```requirements.txt``` inside the Clone Repo and scroll down and change Cuda Version based on your current version of Cuda by add a "#" in front of the version you do not wish to install and leave blank in front of the version that match your version
 
 ```
 py -3.9 -m venv venv
